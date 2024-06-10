@@ -59,7 +59,7 @@ def find_gst_processes():
 def in_gamemode():
     for child in psutil.process_iter():
         try:
-            if "gamescope-session" in " ".join(child.cmdline()):
+            if "gamescope" in " ".join(child.cmdline()):
                 return True
         except psutil.NoSuchProcess:
             pass
@@ -161,10 +161,12 @@ class Plugin:
             )
 
             # Video Pipeline
+            path_id = get_cmd_output('pw-dump | jq \'.[] | select(.info.props["node.name"] == "gamescope") | .id\'')
+
             if not self._rolling:
-                videoPipeline = f"pipewiresrc do-timestamp=true ! vaapipostproc ! queue ! vaapih264enc ! h264parse ! {muxer} name=sink !"
+                videoPipeline = f"pipewiresrc path={path_id} do-timestamp=true ! vaapipostproc ! queue ! vaapih264enc ! h264parse ! {muxer} name=sink !"
             else:
-                videoPipeline = "pipewiresrc do-timestamp=true ! vaapipostproc ! queue ! vaapih264enc ! h264parse !"
+                videoPipeline = f"pipewiresrc path={path_id} do-timestamp=true ! vaapipostproc ! queue ! vaapih264enc ! h264parse !"
 
             cmd = "{} {}".format(start_command, videoPipeline)
 

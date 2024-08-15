@@ -36,6 +36,9 @@ log_file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %
 logger.handlers.clear()
 logger.addHandler(log_file_handler)
 
+# Workaround "libssl.so.3: version `OPENSSL_3.2.0' not found (required by /lib64/libcurl.so.4)" error in Bazzite
+ffmpeg_cmd = "LD_LIBRARY_PATH= ffmpeg"
+
 try:
     sys.path = [str(DEPSPATH / "psutil")] + sys.path
     import psutil
@@ -229,7 +232,7 @@ class Plugin:
             if not self._rolling:
                 # process the gstreamer output with ffmpeg again so that it can be uploaded to Twitter/X
                 logger.info("Process manual recording file with ffmpeg")
-                get_cmd_output(f'ffmpeg -i "{self._filepath}.temp" -c copy "{self._filepath}"')
+                get_cmd_output(f'{ffmpeg_cmd} -i "{self._filepath}.temp" -c copy "{self._filepath}"')
                 get_cmd_output(f'rm "{self._filepath}.temp"')
                 logger.info("Process manual recording file with ffmpeg finished.")
         except Exception:
@@ -529,7 +532,7 @@ class Plugin:
 
             dateTime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             ffmpeg = subprocess.Popen(
-                f'ffmpeg -hwaccel vaapi -hwaccel_output_format vaapi -vaapi_device /dev/dri/renderD128 -f concat -safe 0 -i {self._rollingRecordingFolder}/files -c copy "{self._localFilePath}/{app_name}-{clip_duration}s-{dateTime}.{self._fileformat}"',
+                f'{ffmpeg_cmd} -hwaccel vaapi -hwaccel_output_format vaapi -vaapi_device /dev/dri/renderD128 -f concat -safe 0 -i {self._rollingRecordingFolder}/files -c copy "{self._localFilePath}/{app_name}-{clip_duration}s-{dateTime}.{self._fileformat}"',
                 shell=True,
                 stdout=std_out_file,
                 stderr=std_err_file,
